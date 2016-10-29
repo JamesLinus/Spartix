@@ -10,10 +10,8 @@
  *----------------------------------------------------------------------*/
 #include <unistd.h>
 #include <string.h>
-int _start(int argc, char **argv, char **envp)
+int main(int argc, char **argv, char **envp)
 {
 	write(STDOUT_FILENO, "/bin/echo: usage: /bin/echo [arguments]\n", strlen("/bin/echo: usage: /bin/echo [arguments]\n"));
-	exit(1);
-	while(1);
 	return 0;
 }

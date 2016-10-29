@@ -137,7 +137,7 @@ thread_t* sched_create_main_thread(ThreadCallback callback, uint32_t flags,int a
 	*--stack = 0; // RCX
 	*--stack = (uint64_t) envp; // RDX
 	*--stack = (uint64_t) argc; // RDI
-	*--stack = (uint64_t)argv; // RSI
+	*--stack = (uint64_t) argv; // RSI
 	*--stack = 0; // RBP
 	*--stack = 0; // R15
 	*--stack = 0; // R14
@@ -196,6 +196,8 @@ void* sched_switch_thread(void* last_stack)
 			{
 				paging_load_cr3(current_process->cr3);
 			}
+			wrmsr(FS_BASE_MSR, current_process->fs & 0xFFFFFFFF, current_process->fs >> 32);
+			wrmsr(GS_BASE_MSR, (uintptr_t)current_thread & 0xFFFFFFFF, (uintptr_t)current_thread >> 32);
 		}
 		return current_thread->kernel_stack;
 	}
@@ -231,17 +233,17 @@ uintptr_t *sched_fork_stack(uintptr_t *stack, uintptr_t *forkstackregs, uintptr_
 	*--stack = cs; //CS
 	*--stack = rip; //RIP
 	*--stack = 0; // RAX
-	*--stack = forkstackregs[12]; // RBX
-	*--stack = forkstackregs[11]; // RCX
-	*--stack = forkstackregs[10]; // RDX
-	*--stack = forkstackregs[9]; // RDI
-	*--stack = forkstackregs[8]; // RSI
-	*--stack = forkstackregs[7]; // RBP
-	*--stack = forkstackregs[6]; // R15
-	*--stack = forkstackregs[5]; // R14
-	*--stack = forkstackregs[4]; // R13
-	*--stack = forkstackregs[3]; // R12
-	*--stack = 0;
+	*--stack = forkstackregs[13]; // RBX
+	*--stack = forkstackregs[12]; // RCX
+	*--stack = forkstackregs[11]; // RDX
+	*--stack = forkstackregs[10]; // RDI
+	*--stack = forkstackregs[9]; // RSI
+	*--stack = forkstackregs[8]; // RBP
+	*--stack = forkstackregs[7]; // R15
+	*--stack = forkstackregs[6]; // R14
+	*--stack = forkstackregs[5]; // R13
+	*--stack = forkstackregs[4]; // R12
+	*--stack = forkstackregs[3];
 	*--stack = forkstackregs[2]; // R10
 	*--stack = forkstackregs[1]; // R9
 	*--stack = forkstackregs[0]; // R8
