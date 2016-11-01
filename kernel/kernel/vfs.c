@@ -8,11 +8,15 @@
  * General Public License version 2 as published by the Free Software
  * Foundation.
  *----------------------------------------------------------------------*/
-#include <kernel/vfs.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <assert.h>
+
 #include <kernel/panic.h>
+#include <kernel/vfs.h>
+
 vfsnode_t *fs_root = NULL;
 vfsnode_t *mount_list = NULL;
 int vfs_init()
@@ -42,6 +46,12 @@ size_t write_vfs(size_t offset, size_t sizeofwrite, void* buffer, vfsnode_t* thi
 
 	return errno = ENOSYS;
 }
+int ioctl_vfs(int request, va_list args, vfsnode_t *this)
+{
+	if(this->ioctl != NULL)
+		return this->ioctl(this, request, args);
+	return errno = ENOSYS, -1;
+}
 void close_vfs(vfsnode_t* this)
 {
 	if(this->type & VFS_TYPE_MOUNTPOINT)
@@ -70,11 +80,9 @@ int mount_fs(vfsnode_t *fsroot, const char *path)
 	{
 		printf("Mounting root\n");
 		fs_root->link = fsroot;
-		fs_root->type |= VFS_TYPE_MOUNTPOINT | VFS_TYPE_DIR;
-		if(!fs_root->name)
-			fs_root->name = malloc(2);
-		if(!fs_root->name)
-			panic("OOM while allocating fs_root->name");
+		fs_root->type = VFS_TYPE_MOUNTPOINT | VFS_TYPE_DIR;
+		if(!fs_root->name) fs_root->name = malloc(2);
+		assert(fs_root->name);
 		strcpy(fs_root->name, path);
 		fsroot->mountpoint = (char*)path;
 	}
@@ -86,7 +94,7 @@ int mount_fs(vfsnode_t *fsroot, const char *path)
 			node = node->next;
 		}
 		node->link = fsroot;
-		node->type |= VFS_TYPE_MOUNTPOINT | VFS_TYPE_DIR;
+		node->type = VFS_TYPE_MOUNTPOINT | VFS_TYPE_DIR;
 		node->name = malloc(strlen(path));
 		strcpy(node->name, path);
 		fsroot->mountpoint = (char*)path;
